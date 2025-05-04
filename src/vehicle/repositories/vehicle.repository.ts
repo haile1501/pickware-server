@@ -1,0 +1,12 @@
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Vehicle, VehicleDoc } from '../schemas/vehicle.schema';
+
+@Injectable()
+export class VehicleRepository {
+  constructor(
+    @InjectModel(Vehicle.name)
+    private readonly vehicleModel: Model<VehicleDoc>,
+  ) {}
+}
