@@ -9,4 +9,8 @@ export class WaveRepository {
     @InjectModel(Wave.name)
     private readonly waveModel: Model<WaveDoc>,
   ) {}
+
+  public clearAll() {
+    return this.waveModel.deleteMany();
+  }
 }

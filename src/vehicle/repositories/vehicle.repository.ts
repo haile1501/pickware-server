@@ -9,4 +9,12 @@ export class VehicleRepository {
     @InjectModel(Vehicle.name)
     private readonly vehicleModel: Model<VehicleDoc>,
   ) {}
+
+  public list() {
+    return this.vehicleModel.find();
+  }
+
+  public clearAll() {
+    return this.vehicleModel.deleteMany();
+  }
 }

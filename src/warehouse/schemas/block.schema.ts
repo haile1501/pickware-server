@@ -32,6 +32,9 @@ export class Block {
 
   @Prop({ type: Number, required: true })
   numberOfShelf: number;
+
+  @Prop({ type: Number, required: true })
+  blockOrder: number;
 }
 
 export const BlockSchema = SchemaFactory.createForClass(Block);

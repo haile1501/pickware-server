@@ -17,8 +17,8 @@ export type LayoutDoc = Layout & Document;
   },
 })
 export class Layout {
-  @Prop({ type: [[Number]], required: true })
-  matrix: number[][];
+  @Prop({ type: [[String]], required: true })
+  matrix: string[][];
 }
 
 export const LayoutSchema = SchemaFactory.createForClass(Layout);

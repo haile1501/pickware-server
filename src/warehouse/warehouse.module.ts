@@ -1,13 +1,14 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Layout, LayoutSchema } from './schemas/layout.schema';
 import { Block, BlockSchema } from './schemas/block.schema';
-import { Shelf, ShelfSchema } from './schemas/shelf.schema';
 import { WarehouseController } from './controllers/warehouse.controller';
 import { LayoutRepository } from './repositories/layout.repository';
-import { ShelfRepository } from './repositories/shelf.repository';
 import { BlockRepository } from './repositories/block.repository';
 import { WarehouseService } from './services/warehouse.service';
+import { InventoryModule } from 'src/inventory/inventory.module';
+import { VehicleModule } from 'src/vehicle/vehicle.module';
+import { OrderModule } from 'src/order/order.module';
 
 @Module({
   imports: [
@@ -20,18 +21,13 @@ import { WarehouseService } from './services/warehouse.service';
         name: Block.name,
         schema: BlockSchema,
       },
-      {
-        name: Shelf.name,
-        schema: ShelfSchema,
-      },
     ]),
+    forwardRef(() => InventoryModule),
+    VehicleModule,
+    OrderModule,
   ],
   controllers: [WarehouseController],
-  providers: [
-    LayoutRepository,
-    ShelfRepository,
-    BlockRepository,
-    WarehouseService,
-  ],
+  providers: [LayoutRepository, BlockRepository, WarehouseService],
+  exports: [WarehouseService],
 })
 export class WarehouseModule {}

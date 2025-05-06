@@ -13,4 +13,12 @@ export class LayoutRepository {
   public get() {
     return this.layoutModel.findOne();
   }
+
+  public save(matrix: string[][]) {
+    return this.layoutModel.insertOne({ matrix });
+  }
+
+  public clear() {
+    return this.layoutModel.deleteMany();
+  }
 }

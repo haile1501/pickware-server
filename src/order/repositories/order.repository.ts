@@ -7,6 +7,19 @@ import { Order, OrderDoc } from '../schemas/order.schema';
 export class OrderRepository {
   constructor(
     @InjectModel(Order.name)
-    private readonly cartonModel: Model<OrderDoc>,
+    private readonly orderModel: Model<OrderDoc>,
   ) {}
+
+  public async findPaginated(page: number, size: number) {
+    const skip = (page - 1) * size;
+    return this.orderModel.find().skip(skip).limit(size);
+  }
+
+  public async countAll() {
+    return this.orderModel.countDocuments();
+  }
+
+  public clearAll() {
+    return this.orderModel.deleteMany();
+  }
 }

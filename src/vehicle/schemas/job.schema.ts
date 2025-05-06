@@ -13,7 +13,7 @@ class Carton {
 }
 
 @Schema({
-  collection: 'vehicle',
+  collection: 'job',
   timestamps: {
     createdAt: 'createdDate',
     updatedAt: 'updatedDate',

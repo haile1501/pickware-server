@@ -23,14 +23,17 @@ export class Carton {
   @Prop({ type: Number, required: true })
   quantity: number;
 
-  @Prop({ type: String, required: true })
-  blockId: string;
+  @Prop({ type: Number, required: true })
+  blockOrder: number;
 
   @Prop({ type: Number, required: true })
   shelfOrder: number;
 
   @Prop({ type: Number, required: true })
   cellOrder: number;
+
+  @Prop({ type: Number, required: true })
+  cellLevel: number;
 }
 
 export const CartonSchema = SchemaFactory.createForClass(Carton);
