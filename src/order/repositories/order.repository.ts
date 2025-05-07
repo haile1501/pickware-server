@@ -11,10 +11,30 @@ export class OrderRepository {
     private readonly orderModel: Model<OrderDoc>,
   ) {}
 
-  public async findPaginated(page: number, size: number) {
+  public async findPaginated(page: number, size: number): Promise<any[]> {
     const skip = (page - 1) * size;
 
-    return this.orderModel.find().skip(skip).limit(size);
+    // Fetch orders with populated productId
+    const orders = await this.orderModel
+      .find()
+      .skip(skip)
+      .limit(size)
+      .populate({
+        path: 'orderlines.productId',
+        model: 'Product',
+      });
+
+    // Rename productId to product in orderlines
+    return orders.map((order) => {
+      order.orderlines = order.orderlines.map((orderline) => {
+        return {
+          ...orderline,
+          product: orderline.productId, // Rename productId to product
+          productId: undefined, // Remove the original productId field
+        };
+      });
+      return order.toJSON();
+    });
   }
 
   public async countAll() {
@@ -26,6 +46,15 @@ export class OrderRepository {
   }
 
   public getOrdersBetweenStartEnd(startTime: Date, endTime: Date) {
+    return this.orderModel.find({
+      arrivalTime: {
+        $gte: startTime,
+        $lte: endTime,
+      },
+    });
+  }
+
+  public getOrdersBetweenStartEndWithProducts(startTime: Date, endTime: Date) {
     return this.orderModel.find({
       arrivalTime: {
         $gte: startTime,
