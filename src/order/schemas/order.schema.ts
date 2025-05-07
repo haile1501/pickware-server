@@ -29,7 +29,7 @@ export class Orderline {
   },
 })
 export class Order {
-  @Prop({ type: Date, required: true })
+  @Prop({ type: Date, required: true, default: Date.now() })
   arrivalTime: Date;
 
   @Prop({
@@ -39,6 +39,7 @@ export class Order {
       OrderStatusEnum.Fulfilled,
       OrderStatusEnum.Pending,
     ],
+    default: OrderStatusEnum.Pending,
   })
   status: OrderStatusEnum;
 

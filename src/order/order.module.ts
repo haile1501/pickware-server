@@ -6,6 +6,7 @@ import { OrderRepository } from './repositories/order.repository';
 import { WaveRepository } from './repositories/wave.repository';
 import { OrderController } from './controllers/order.controller';
 import { OrderService } from './services/order.service';
+import { VehicleModule } from 'src/vehicle/vehicle.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { OrderService } from './services/order.service';
         schema: WaveSchema,
       },
     ]),
+    VehicleModule,
   ],
   controllers: [OrderController],
   providers: [OrderRepository, WaveRepository, OrderService],

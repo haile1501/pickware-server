@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Order, OrderDoc } from '../schemas/order.schema';
+import { SetupOrdersDto } from '../dtos/setup-orders.dto';
 
 @Injectable()
 export class OrderRepository {
@@ -12,6 +13,7 @@ export class OrderRepository {
 
   public async findPaginated(page: number, size: number) {
     const skip = (page - 1) * size;
+
     return this.orderModel.find().skip(skip).limit(size);
   }
 
@@ -21,5 +23,18 @@ export class OrderRepository {
 
   public clearAll() {
     return this.orderModel.deleteMany();
+  }
+
+  public getOrdersBetweenStartEnd(startTime: Date, endTime: Date) {
+    return this.orderModel.find({
+      arrivalTime: {
+        $gte: startTime,
+        $lte: endTime,
+      },
+    });
+  }
+
+  public setupOrders(data: SetupOrdersDto) {
+    return this.orderModel.insertMany(data.orders);
   }
 }

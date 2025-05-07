@@ -24,6 +24,7 @@ export class Wave {
   @Prop({
     type: String,
     enum: [WaveStatusEnum.Processing, WaveStatusEnum.Fulfilled],
+    default: WaveStatusEnum.Processing,
   })
   status: WaveStatusEnum;
 }

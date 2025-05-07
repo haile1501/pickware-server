@@ -24,6 +24,7 @@ export class Vehicle {
   @Prop({
     type: String,
     enum: [VehicleStatusEnum.Available, VehicleStatusEnum.Picking],
+    default: VehicleStatusEnum.Available,
   })
   status: VehicleStatusEnum;
 }

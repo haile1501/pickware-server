@@ -21,4 +21,11 @@ export class JobRepository {
       status: JobStatusEnum.Processing,
     });
   }
+
+  public getProcessingJobByVehicleIds(vehicleIds: string[]) {
+    return this.jobModel.find({
+      vehicleId: { $in: vehicleIds },
+      status: JobStatusEnum.Processing,
+    });
+  }
 }

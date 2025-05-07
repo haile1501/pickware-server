@@ -13,4 +13,8 @@ export class WaveRepository {
   public clearAll() {
     return this.waveModel.deleteMany();
   }
+
+  public createWave(numberOfOrder: number) {
+    return this.waveModel.create({ numberOfOrder });
+  }
 }
