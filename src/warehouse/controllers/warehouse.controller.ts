@@ -38,6 +38,26 @@ export class WarehouseController {
     };
   }
 
+  @Post('upload-blocks')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadBlocks(@UploadedFile() file: Express.Multer.File) {
+    // Parse the file content as JSON
+    const blocks = JSON.parse(file.buffer.toString('utf-8'));
+
+    // Validate the structure of the blocks (optional, if needed)
+    if (!Array.isArray(blocks)) {
+      throw new Error('Invalid file format: Expected an array of blocks');
+    }
+
+    // Pass the parsed blocks to the service for processing
+    await this.warehouseService.setupBlocks({ blocks });
+
+    return {
+      message: 'Blocks uploaded successfully',
+      blocks,
+    };
+  }
+
   @Post('setup-blocks')
   async setupBlocks(@Body() setUpBlocksDto: SetupBlocksDto) {
     return this.warehouseService.setupBlocks(setUpBlocksDto);

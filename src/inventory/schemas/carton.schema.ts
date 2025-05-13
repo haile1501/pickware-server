@@ -3,6 +3,15 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 export type CartonDoc = Carton & Document;
 
 @Schema({
+  _id: false,
+})
+export class Coordinate {
+  x: number;
+  y: number;
+  z: number;
+}
+
+@Schema({
   collection: 'carton',
   timestamps: {
     createdAt: 'createdDate',
@@ -34,6 +43,9 @@ export class Carton {
 
   @Prop({ type: Number, required: true })
   cellLevel: number;
+
+  @Prop({ type: Coordinate, required: true })
+  coordinate: Coordinate;
 }
 
 export const CartonSchema = SchemaFactory.createForClass(Carton);
