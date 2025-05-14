@@ -27,7 +27,7 @@ export class CartonRepository {
     return this.cartonModel.find();
   }
 
-  public getProductCartons(productId: string) {
-    return this.cartonModel.find({ productId });
+  public getProductCartons(sku: string) {
+    return this.cartonModel.find({ sku });
   }
 }

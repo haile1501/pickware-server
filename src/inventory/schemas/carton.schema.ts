@@ -6,8 +6,13 @@ export type CartonDoc = Carton & Document;
   _id: false,
 })
 export class Coordinate {
+  @Prop({ type: Number, required: true })
   x: number;
+
+  @Prop({ type: Number, required: true })
   y: number;
+
+  @Prop({ type: Number, required: true })
   z: number;
 }
 
@@ -27,7 +32,7 @@ export class Coordinate {
 })
 export class Carton {
   @Prop({ type: String, required: true })
-  productId: string;
+  sku: string;
 
   @Prop({ type: Number, required: true })
   quantity: number;

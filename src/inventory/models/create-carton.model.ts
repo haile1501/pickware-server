@@ -1,8 +1,11 @@
+import { Coordinate } from '../schemas/carton.schema';
+
 export class CreateCartonModel {
-  productId: string;
+  sku: string;
   quantity: number;
   blockOrder: number;
   shelfOrder: number;
   cellOrder: number;
   cellLevel: number;
+  coordinate: Coordinate;
 }

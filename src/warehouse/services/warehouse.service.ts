@@ -10,6 +10,9 @@ import { BlockRepository } from '../repositories/block.repository';
 import { InventoryService } from 'src/inventory/services/inventory.service';
 import { OrderService } from 'src/order/services/order.service';
 import { VehicleService } from 'src/vehicle/services/vehicle.service';
+import { CreateProductModel } from 'src/inventory/models/create-product.model';
+import { CreateCartonModel } from 'src/inventory/models/create-carton.model';
+import { Block } from '../schemas/block.schema';
 
 @Injectable()
 export class WarehouseService {
@@ -43,6 +46,51 @@ export class WarehouseService {
     return this.blockRepository.setUpBlocks(setUpBlocksDto);
   }
 
+  public importProducts(products: CreateProductModel[]) {
+    return this.inventoryService.importProduct(products);
+  }
+
+  public async importCartons(cartons: CreateCartonModel[]) {
+    const blocks = await this.getBlocks();
+
+    // Map block order to block itself
+    const blockMap = new Map<number, Block>();
+    blocks.forEach((block) => {
+      blockMap.set(block.blockOrder, block);
+    });
+
+    // Map cartons to their corresponding blocks and calculate coordinate
+    const cartonsWithCoordinates = cartons.map((carton) => {
+      const block = blockMap.get(carton.blockOrder);
+
+      if (!block) {
+        throw new Error(`Block with order ${carton.blockOrder} not found`);
+      }
+
+      const coordinate = {
+        x: 0,
+        y: 0,
+        z: 0,
+      };
+
+      if (carton.shelfOrder % 2 !== 0) {
+        coordinate.x = (3 * carton.shelfOrder - 3) / 2 + block.rootXCoordinate;
+      } else {
+        coordinate.x = (3 * carton.shelfOrder - 4) / 2 + block.rootXCoordinate;
+      }
+
+      coordinate.y = block.rootYCoordinate + carton.cellOrder - 1;
+      coordinate.z = carton.cellLevel;
+
+      return {
+        ...carton,
+        coordinate,
+      };
+    });
+
+    return await this.inventoryService.importCarton(cartonsWithCoordinates);
+  }
+
   // clear layout
   // clear block
   // clear order
@@ -56,7 +104,7 @@ export class WarehouseService {
       this.orderService.clearOrderAndWave(),
       this.layoutRepository.clear(),
       this.blockRepository.clearBlock(),
-      this.vehicleService.clearVehicleAndJob(),
+      // this.vehicleService.clearVehicleAndJob(),
     ]);
   }
 }

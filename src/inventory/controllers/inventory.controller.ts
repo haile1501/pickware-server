@@ -25,8 +25,8 @@ export class InventoryController {
     return this.inventoryService.getAllCartons();
   }
 
-  @Get(':productId/cartons')
-  public async getProductCartons(@Param('productId') productId: string) {
-    return this.inventoryService.getProductCartons(productId);
+  @Get(':sku/cartons')
+  public async getProductCartons(@Param('sku') sku: string) {
+    return this.inventoryService.getProductCartons(sku);
   }
 }
