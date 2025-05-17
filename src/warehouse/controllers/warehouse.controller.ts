@@ -19,25 +19,54 @@ export class WarehouseController {
   constructor(private readonly warehouseService: WarehouseService) {}
 
   @Get('layout')
-  public getLayout() {
-    return this.warehouseService.getLayout();
+  public getLayoutMatrix() {
+    return this.warehouseService.getLayoutMatrix();
   }
 
   @Post('upload-layout')
   @UseInterceptors(FileInterceptor('file'))
   async uploadLayout(@UploadedFile() file: Express.Multer.File) {
     const fileContent = file.buffer.toString('utf-8');
+    const lines = fileContent.trim().split('\n');
 
-    const matrix = fileContent
-      .trim()
-      .split('\n')
-      .map((line) => line.trim().split(/\s+/));
+    let startPos: { x: number; y: number } | null = null;
+    let dropPos: { x: number; y: number } | null = null;
+    const matrix: string[][] = [];
 
-    await this.warehouseService.saveLayout(matrix);
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+
+      if (trimmedLine.startsWith('startPos:')) {
+        const [x, y] = trimmedLine
+          .replace('startPos:', '')
+          .trim()
+          .split('-')
+          .map(Number);
+        startPos = { x, y };
+      } else if (trimmedLine.startsWith('dropPos:')) {
+        const [x, y] = trimmedLine
+          .replace('dropPos:', '')
+          .trim()
+          .split('-')
+          .map(Number);
+        dropPos = { x, y };
+      } else if (trimmedLine.length > 0 && /^[0-9xXyY\s]+$/.test(trimmedLine)) {
+        const row = trimmedLine.split(/\s+/);
+        matrix.push(row);
+      }
+    }
+
+    if (!startPos || !dropPos) {
+      throw new Error('Missing startPos or dropPos in the uploaded layout');
+    }
+
+    await this.warehouseService.saveLayout(matrix, startPos, dropPos);
 
     return {
       message: 'Layout uploaded successfully',
       matrix,
+      startPos,
+      dropPos,
     };
   }
 

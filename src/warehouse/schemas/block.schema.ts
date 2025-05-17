@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { BlockDirection } from '../constants/block-direction.enum';
+import { Document } from 'mongoose';
 
 export type BlockDoc = Block & Document;
 

@@ -18,11 +18,9 @@ export class VehicleRepository {
     return this.vehicleModel.deleteMany();
   }
 
-  public setupVehicles(codes: string[]) {
-    return this.vehicleModel.insertMany(
-      codes.map((item) => ({
-        code: item,
-      })),
-    );
+  public setupVehicles(
+    data: { code: string; startPos: { x: number; y: number } }[],
+  ) {
+    return this.vehicleModel.insertMany(data);
   }
 }

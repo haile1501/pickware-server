@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { VehicleStatusEnum } from '../constants/vehicle-status.enum';
+import { Document } from 'mongoose';
 
 export type VehicleDoc = Vehicle & Document;
 
@@ -27,6 +28,12 @@ export class Vehicle {
     default: VehicleStatusEnum.Available,
   })
   status: VehicleStatusEnum;
+
+  @Prop({
+    type: Object,
+    required: true,
+  })
+  startPos: { x: number; y: number };
 }
 
 export const VehicleSchema = SchemaFactory.createForClass(Vehicle);

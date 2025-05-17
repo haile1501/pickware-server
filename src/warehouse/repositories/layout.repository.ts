@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Layout, LayoutDoc } from '../schemas/layout.schema';
+import { XyCoordinate } from 'src/common/models/xy-coordinate.model';
 
 @Injectable()
 export class LayoutRepository {
@@ -14,8 +15,16 @@ export class LayoutRepository {
     return this.layoutModel.findOne();
   }
 
-  public save(matrix: string[][]) {
-    return this.layoutModel.insertOne({ matrix });
+  public save(
+    matrix: string[][],
+    vehicleStartPos: XyCoordinate,
+    vehicleDropPos: XyCoordinate,
+  ) {
+    return this.layoutModel.insertOne({
+      matrix,
+      vehicleStartPos,
+      vehicleDropPos,
+    });
   }
 
   public clear() {

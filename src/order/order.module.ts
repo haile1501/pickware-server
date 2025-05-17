@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Order, OrderSchema } from './schemas/order.schema';
 import { Wave, WaveSchema } from './schemas/wave.schema';
@@ -7,6 +7,8 @@ import { WaveRepository } from './repositories/wave.repository';
 import { OrderController } from './controllers/order.controller';
 import { OrderService } from './services/order.service';
 import { VehicleModule } from 'src/vehicle/vehicle.module';
+import { InventoryModule } from 'src/inventory/inventory.module';
+import { WarehouseModule } from 'src/warehouse/warehouse.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { VehicleModule } from 'src/vehicle/vehicle.module';
       },
     ]),
     VehicleModule,
+    forwardRef(() => InventoryModule),
+    forwardRef(() => WarehouseModule),
   ],
   controllers: [OrderController],
   providers: [OrderRepository, WaveRepository, OrderService],

@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { OrderStatusEnum } from '../constants/order-status.enum';
+import { Document } from 'mongoose';
 
 export type OrderDoc = Order & Document;
 
@@ -8,7 +9,7 @@ export type OrderDoc = Order & Document;
 })
 export class Orderline {
   @Prop({ type: String, required: true })
-  productId: string;
+  sku: string;
 
   @Prop({ type: Number, required: true })
   quantity: number;

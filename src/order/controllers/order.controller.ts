@@ -25,8 +25,8 @@ export class OrderController {
 
   @Post('generate-wave')
   public async generateWave(@Body() dto: GenerateWaveDto) {
-    const { startTime, endTime } = dto;
-    return this.orderService.generateWave(startTime, endTime);
+    const { endTime } = dto;
+    return this.orderService.generateWave(new Date(endTime));
   }
 
   @Post('setup-orders')

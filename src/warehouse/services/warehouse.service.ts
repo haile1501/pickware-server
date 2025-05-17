@@ -13,6 +13,7 @@ import { VehicleService } from 'src/vehicle/services/vehicle.service';
 import { CreateProductModel } from 'src/inventory/models/create-product.model';
 import { CreateCartonModel } from 'src/inventory/models/create-carton.model';
 import { Block } from '../schemas/block.schema';
+import { XyCoordinate } from 'src/common/models/xy-coordinate.model';
 
 @Injectable()
 export class WarehouseService {
@@ -25,7 +26,7 @@ export class WarehouseService {
     private readonly vehicleService: VehicleService,
   ) {}
 
-  public async getLayout() {
+  public async getLayoutMatrix() {
     const layout = await this.layoutRepository.get();
     if (!layout) {
       throw new NotFoundException();
@@ -34,12 +35,25 @@ export class WarehouseService {
     return layout.matrix;
   }
 
+  public async getLayout() {
+    const layout = await this.layoutRepository.get();
+    if (!layout) {
+      throw new NotFoundException();
+    }
+
+    return layout;
+  }
+
   public async getBlocks() {
     return this.blockRepository.getBlocks();
   }
 
-  public saveLayout(matrix: string[][]) {
-    return this.layoutRepository.save(matrix);
+  public saveLayout(
+    matrix: string[][],
+    startPos: XyCoordinate,
+    dropPos: XyCoordinate,
+  ) {
+    return this.layoutRepository.save(matrix, startPos, dropPos);
   }
 
   public setupBlocks(setUpBlocksDto: SetupBlocksDto) {

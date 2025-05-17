@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
 
 export type LayoutDoc = Layout & Document;
 
@@ -19,6 +20,12 @@ export type LayoutDoc = Layout & Document;
 export class Layout {
   @Prop({ type: [[String]], required: true })
   matrix: string[][];
+
+  @Prop({ type: Object, required: true })
+  vehicleStartPos: { x: number; y: number };
+
+  @Prop({ type: Object, required: true })
+  vehicleDropPos: { x: number; y: number };
 }
 
 export const LayoutSchema = SchemaFactory.createForClass(Layout);

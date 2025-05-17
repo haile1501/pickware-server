@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { WaveStatusEnum } from '../constants/wave-status.enum';
+import { Document } from 'mongoose';
 
 export type WaveDoc = Wave & Document;
 

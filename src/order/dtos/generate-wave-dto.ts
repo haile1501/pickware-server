@@ -1,9 +1,6 @@
-import { IsNumber } from 'class-validator';
+import { IsDateString } from 'class-validator';
 
 export class GenerateWaveDto {
-  @IsNumber()
-  startTime: Date;
-
-  @IsNumber()
-  endTime: Date;
+  @IsDateString()
+  endTime: string;
 }

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Vehicle, VehicleSchema } from './schemas/vehicle.schema';
 import { Job, JobSchema } from './schemas/job.schema';
@@ -6,6 +6,7 @@ import { VehicleService } from './services/vehicle.service';
 import { VehicleRepository } from './repositories/vehicle.repository';
 import { JobRepository } from './repositories/job.repository';
 import { VehicleController } from './controllers/vehicle.controller';
+import { WarehouseModule } from 'src/warehouse/warehouse.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { VehicleController } from './controllers/vehicle.controller';
         schema: JobSchema,
       },
     ]),
+    forwardRef(() => WarehouseModule),
   ],
   controllers: [VehicleController],
   providers: [VehicleService, VehicleRepository, JobRepository],
