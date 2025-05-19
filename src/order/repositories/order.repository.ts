@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Order, OrderDoc } from '../schemas/order.schema';
-import { SetupOrdersDto } from '../dtos/setup-orders.dto';
+import { OrderDto, SetupOrdersDto } from '../dtos/setup-orders.dto';
 import { OrderStatusEnum } from '../constants/order-status.enum';
 
 @Injectable()
@@ -66,5 +66,9 @@ export class OrderRepository {
 
   public setupOrders(data: SetupOrdersDto) {
     return this.orderModel.insertMany(data.orders);
+  }
+
+  public createOrder(order: OrderDto) {
+    return this.orderModel.insertOne(order);
   }
 }

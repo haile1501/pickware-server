@@ -22,7 +22,7 @@ import { WarehouseModule } from 'src/warehouse/warehouse.module';
         schema: WaveSchema,
       },
     ]),
-    VehicleModule,
+    forwardRef(() => VehicleModule),
     forwardRef(() => InventoryModule),
     forwardRef(() => WarehouseModule),
   ],

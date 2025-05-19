@@ -2,19 +2,21 @@ import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { OrderRepository } from '../repositories/order.repository';
 import { WaveRepository } from '../repositories/wave.repository';
 import { VehicleService } from 'src/vehicle/services/vehicle.service';
-import { SetupOrdersDto } from '../dtos/setup-orders.dto';
+import { OrderDto, SetupOrdersDto } from '../dtos/setup-orders.dto';
 import { Order } from '../schemas/order.schema';
 import { InventoryService } from 'src/inventory/services/inventory.service';
 import { CartonDoc } from 'src/inventory/schemas/carton.schema';
 import { generateJob } from 'src/algorithm';
 import { WarehouseService } from 'src/warehouse/services/warehouse.service';
 import { Action } from 'src/vehicle/constants/action.enum';
+import { OrderStatusEnum } from '../constants/order-status.enum';
 
 @Injectable()
 export class OrderService {
   constructor(
     private readonly orderRepository: OrderRepository,
     private readonly waveRepository: WaveRepository,
+    @Inject(forwardRef(() => VehicleService))
     private readonly vehicleService: VehicleService,
     @Inject(forwardRef(() => InventoryService))
     private readonly inventoryService: InventoryService,
@@ -51,7 +53,7 @@ export class OrderService {
     await Promise.all(
       orders.map((order) => {
         order.waveId = waveId;
-        // order.status = OrderStatusEnum.Processing;
+        order.status = OrderStatusEnum.Processing;
         return order.save();
       }),
     );
@@ -79,7 +81,7 @@ export class OrderService {
       jobs.map((job) => ({
         waveId: waveId,
         vehicleCode: job.code,
-        cartons: job.cartons.map((carton) => ({ id: carton.id })),
+        cartons: job.cartons.map((carton) => ({ id: carton.id.toString() })),
         steps: job.path.map((step) => ({
           coordinate: { x: step.x, y: step.y },
           action: step.action as Action,
@@ -118,5 +120,13 @@ export class OrderService {
 
     // Filter out any nulls (in case no cartons found for a SKU)
     return cartons.filter(Boolean);
+  }
+
+  public finishWave(waveId: string) {
+    return this.waveRepository.finishWave(waveId);
+  }
+
+  public createOrder(order: OrderDto) {
+    return this.orderRepository.createOrder(order);
   }
 }

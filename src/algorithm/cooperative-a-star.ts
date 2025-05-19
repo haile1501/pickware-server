@@ -38,7 +38,7 @@ const DIRS = [
 const heuristic = (a: Pos, b: Pos) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 
 // Simple binary heap priority queue for Node
-class PriorityQueue<T> {
+export class PriorityQueue<T> {
   private heap: { item: T; priority: number }[] = [];
   enqueue(item: T, priority: number) {
     this.heap.push({ item, priority });
@@ -227,12 +227,22 @@ function buildPathSequence(
     // Add vertex and edge constraints
     pathToCarton.forEach((n, i, arr) => {
       constraints.push({ x: n.x, y: n.y, t: n.t });
+      if (n.action === 'pick') {
+        constraints.push({ x: n.x, y: n.y, t: n.t + 1 });
+      }
       if (i > 0) {
         edgeConstraints.push({
           from: { x: arr[i - 1].x, y: arr[i - 1].y },
           to: { x: n.x, y: n.y },
           t: n.t,
         });
+        if (n.action === 'pick') {
+          edgeConstraints.push({
+            from: { x: arr[i - 1].x, y: arr[i - 1].y },
+            to: { x: n.x, y: n.y },
+            t: n.t + 1,
+          });
+        }
       }
     });
     sequence.push(
@@ -244,7 +254,7 @@ function buildPathSequence(
       })),
     );
 
-    time = pickStep.t;
+    time = pickStep.t + 1;
     current = carton.coordinate;
 
     const pathToDrop = aStar(

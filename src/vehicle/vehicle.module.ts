@@ -7,6 +7,7 @@ import { VehicleRepository } from './repositories/vehicle.repository';
 import { JobRepository } from './repositories/job.repository';
 import { VehicleController } from './controllers/vehicle.controller';
 import { WarehouseModule } from 'src/warehouse/warehouse.module';
+import { OrderModule } from 'src/order/order.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { WarehouseModule } from 'src/warehouse/warehouse.module';
       },
     ]),
     forwardRef(() => WarehouseModule),
+    forwardRef(() => OrderModule),
   ],
   controllers: [VehicleController],
   providers: [VehicleService, VehicleRepository, JobRepository],

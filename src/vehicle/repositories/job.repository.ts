@@ -33,4 +33,25 @@ export class JobRepository {
   public createJobs(jobs: CreateJob[]) {
     return this.jobModel.insertMany(jobs);
   }
+
+  public getProcessingJobByVehicleCode(vehicleCode: string) {
+    return this.jobModel.findOne({
+      vehicleCode,
+      status: JobStatusEnum.Processing,
+    });
+  }
+
+  public async updateCartonsByJobId(jobId: string, cartons: any[]) {
+    return this.jobModel.updateOne({ _id: jobId }, { $set: { cartons } });
+  }
+
+  public async finishJob(jobId: string) {
+    return this.jobModel.findByIdAndUpdate(jobId, {
+      status: JobStatusEnum.Fulfilled,
+    });
+  }
+
+  public async getAllJobsByWaveId(waveId: string) {
+    return await this.jobModel.find({ waveId });
+  }
 }

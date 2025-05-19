@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { OrderService } from '../services/order.service';
 import { GenerateWaveDto } from '../dtos/generate-wave-dto';
-import { SetupOrdersDto } from '../dtos/setup-orders.dto';
+import { OrderDto, SetupOrdersDto } from '../dtos/setup-orders.dto';
 
 @Controller('order')
 export class OrderController {
@@ -32,5 +32,10 @@ export class OrderController {
   @Post('setup-orders')
   public async setupOrders(@Body() dto: SetupOrdersDto) {
     return this.orderService.setupOrders(dto);
+  }
+
+  @Post('create-order')
+  public async createOrder(@Body() dto: OrderDto) {
+    return this.orderService.createOrder(dto);
   }
 }
