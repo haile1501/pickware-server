@@ -86,8 +86,8 @@ export class VehicleService {
     return { success: true };
   }
 
-  public async finishJob(jobId: string) {
-    const job = await this.jobRepository.finishJob(jobId);
+  public async finishJob(vehicleCode: string) {
+    const job = await this.jobRepository.finishJob(vehicleCode);
     await this.vehicleRepository.finishJob(job.vehicleCode);
     const jobs = await this.jobRepository.getAllJobsByWaveId(job.waveId);
 

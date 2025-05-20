@@ -89,14 +89,13 @@ export function aStar(
         next.y >= grid.length ||
         grid[next.y][next.x] === '8' ||
         isConstrained(next, nt, vehicleCode, constraints)
-        // Removed: || nt > maxTime
       )
         continue;
 
       const nextStep: Step = {
         ...next,
         t: nt,
-        action: 'move',
+        action: dir.x === 0 && dir.y === 0 ? 'stop' : 'move',
         parent: current,
       };
       open.enqueue(nextStep, nt + heuristic(next, goal));
@@ -179,6 +178,12 @@ export function runCBS(grid: string[][], vehicles: Vehicle[]): Vehicle[] {
       );
       if (!toCarton) throw new Error(`No path to carton for ${v.code}`);
       steps.push(...toCarton);
+      steps.push({
+        ...getPickPos(carton),
+        action: 'pick',
+        t: toCarton[toCarton.length - 1].t + 1,
+        pickPos: carton.coordinate,
+      });
 
       const toDrop = aStar(
         grid,
@@ -187,10 +192,15 @@ export function runCBS(grid: string[][], vehicles: Vehicle[]): Vehicle[] {
         steps[steps.length - 1].t,
         v.code,
         root.constraints,
-        'pick',
+        'move',
       );
       if (!toDrop) throw new Error(`No path to drop for ${v.code}`);
       steps.push(...toDrop);
+      steps.push({
+        ...v.drop,
+        action: 'drop',
+        t: toDrop[toDrop.length - 1].t + 1,
+      });
 
       current = v.drop;
       t = steps[steps.length - 1].t;

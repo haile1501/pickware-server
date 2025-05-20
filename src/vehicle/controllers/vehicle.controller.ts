@@ -22,8 +22,8 @@ export class VehicleController {
     return this.vehicleService.updatePickProgress(dto);
   }
 
-  @Post('finish-job/:jobId')
-  public finishJob(@Param('jobId') jobId: string) {
-    return this.vehicleService.finishJob(jobId);
+  @Post('finish-job/:vehicleCode')
+  public finishJob(@Param('vehicleCode') vehicleCode: string) {
+    return this.vehicleService.finishJob(vehicleCode);
   }
 }

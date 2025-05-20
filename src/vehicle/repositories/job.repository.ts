@@ -45,10 +45,13 @@ export class JobRepository {
     return this.jobModel.updateOne({ _id: jobId }, { $set: { cartons } });
   }
 
-  public async finishJob(jobId: string) {
-    return this.jobModel.findByIdAndUpdate(jobId, {
-      status: JobStatusEnum.Fulfilled,
-    });
+  public async finishJob(vehicleCode: string) {
+    return this.jobModel.findOneAndUpdate(
+      { vehicleCode },
+      {
+        status: JobStatusEnum.Fulfilled,
+      },
+    );
   }
 
   public async getAllJobsByWaveId(waveId: string) {
