@@ -122,8 +122,9 @@ export class OrderService {
     return cartons.filter(Boolean);
   }
 
-  public finishWave(waveId: string) {
-    return this.waveRepository.finishWave(waveId);
+  public async finishWave(waveId: string) {
+    await this.orderRepository.fulfillOrders(waveId);
+    await this.waveRepository.finishWave(waveId);
   }
 
   public createOrder(order: OrderDto) {

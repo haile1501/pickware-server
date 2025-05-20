@@ -71,4 +71,11 @@ export class OrderRepository {
   public createOrder(order: OrderDto) {
     return this.orderModel.insertOne(order);
   }
+
+  public fulfillOrders(waveId: string) {
+    return this.orderModel.updateMany(
+      { waveId },
+      { status: OrderStatusEnum.Fulfilled },
+    );
+  }
 }
