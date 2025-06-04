@@ -1,4 +1,4 @@
-import { Carton } from './models/carton';
+import { Carton } from '../models/carton';
 
 export const getPickPos = (carton: Carton) => {
   if (carton.shelfOrder % 2 === 1) {

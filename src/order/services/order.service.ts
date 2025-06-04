@@ -6,10 +6,13 @@ import { OrderDto, SetupOrdersDto } from '../dtos/setup-orders.dto';
 import { Order } from '../schemas/order.schema';
 import { InventoryService } from 'src/inventory/services/inventory.service';
 import { CartonDoc } from 'src/inventory/schemas/carton.schema';
-import { generateJob } from 'src/algorithm';
 import { WarehouseService } from 'src/warehouse/services/warehouse.service';
+// import { Action } from 'src/vehicle/constants/action.enum';
+import { generateJob } from 'src/algorithm/methods';
+import { generatePreviewPlan } from 'src/algorithm/methods/generate-preview';
+import { JobsPreview } from '../schemas/jobs-preview.schema';
 import { Action } from 'src/vehicle/constants/action.enum';
-import { OrderStatusEnum } from '../constants/order-status.enum';
+import { JobsPreviewRepository } from '../repositories/jobs-preview.repository';
 
 @Injectable()
 export class OrderService {
@@ -22,6 +25,7 @@ export class OrderService {
     private readonly inventoryService: InventoryService,
     @Inject(forwardRef(() => WarehouseService))
     private readonly warehouseService: WarehouseService,
+    private readonly jobsPreviewRepository: JobsPreviewRepository,
   ) {}
 
   public async getPaginatedOrders(page: number, size: number) {
@@ -44,7 +48,7 @@ export class OrderService {
     await this.waveRepository.clearAll();
   }
 
-  public async generateWave(endTime: Date) {
+  public async generateWave(endTime: Date, algorithm: string) {
     const orders =
       await this.orderRepository.getPendingOrdersBeforeEndTime(endTime);
 
@@ -53,7 +57,7 @@ export class OrderService {
     await Promise.all(
       orders.map((order) => {
         order.waveId = waveId;
-        order.status = OrderStatusEnum.Processing;
+        // order.status = OrderStatusEnum.Processing;
         return order.save();
       }),
     );
@@ -75,13 +79,16 @@ export class OrderService {
       })),
       layout.toJSON().vehicleDropPos,
       layout.toJSON().matrix,
+      algorithm,
     );
 
     return this.vehicleService.createJobs(
       jobs.map((job) => ({
         waveId: waveId,
         vehicleCode: job.code,
-        cartons: job.cartons.map((carton) => ({ id: carton.id.toString() })),
+        cartons: job.job.cartons.map((carton) => ({
+          id: carton.id.toString(),
+        })),
         steps: job.path.map((step) => ({
           coordinate: { x: step.x, y: step.y },
           action: step.action as Action,
@@ -129,5 +136,118 @@ export class OrderService {
 
   public createOrder(order: OrderDto) {
     return this.orderRepository.createOrder(order);
+  }
+
+  public async previewPickingPlan() {
+    const orders = await this.orderRepository.getOrders();
+
+    const layout = await this.warehouseService.getLayout();
+
+    const vehicles = await this.vehicleService.list();
+    const cartonsToPick = await this.calculateCartonsToPick(orders);
+
+    const results = generatePreviewPlan(
+      cartonsToPick.map((item) => ({
+        id: item.toJSON().id,
+        coordinate: item.toJSON().coordinate,
+        shelfOrder: item.toJSON().shelfOrder,
+      })),
+      vehicles.map((item) => ({
+        code: item.toJSON().code,
+        startPos: item.toJSON().startPos,
+      })),
+      layout.toJSON().vehicleDropPos,
+      layout.toJSON().matrix,
+    );
+
+    const jobsPreview: JobsPreview = {
+      waveId: '1',
+      withoutCollisionHandlingData: {
+        estimatedPickingTime: results.noConflictResult.estimatedPickingTime,
+        totalPathLength: results.noConflictResult.totalPathLength,
+        averagePathLength: results.noConflictResult.averagePathLength,
+      },
+      algoDetails: [],
+      active: true,
+    };
+
+    jobsPreview.algoDetails.push({
+      algoName: 'ca',
+      estimatedPickingTime:
+        results.cooperativeAStarResult.metrics.estimatedPickingTime,
+      estimatedVehiclesStoppingTime:
+        results.cooperativeAStarResult.metrics.estimatedVehiclesStoppingTime,
+      idleSteps: results.cooperativeAStarResult.metrics.idleSteps,
+      totalPathLength: results.cooperativeAStarResult.metrics.totalPathLength,
+      averagePathLength:
+        results.cooperativeAStarResult.metrics.averagePathLength,
+      jobs: results.cooperativeAStarResult.vehicles.map((vehicle) => ({
+        vehicleCode: vehicle.code,
+        cartons: vehicle.job.cartons,
+        steps: vehicle.path.map((step) => ({
+          coordinate: { x: step.x, y: step.y },
+          action: step.action as Action,
+          pickPos: step.pickPos,
+        })),
+      })),
+      conflictsResolved: 0,
+      totalConstraintsAdded: 0,
+    });
+
+    jobsPreview.algoDetails.push({
+      algoName: 'cbs',
+      estimatedPickingTime: results.cbsResult.metrics.estimatedPickingTime,
+      estimatedVehiclesStoppingTime:
+        results.cbsResult.metrics.estimatedVehiclesStoppingTime,
+      idleSteps: results.cbsResult.metrics.idleSteps,
+      totalPathLength: results.cbsResult.metrics.totalPathLength,
+      averagePathLength: results.cbsResult.metrics.averagePathLength,
+      jobs: results.cbsResult.vehicles.map((vehicle) => ({
+        vehicleCode: vehicle.code,
+        cartons: vehicle.job.cartons,
+        steps: vehicle.path.map((step) => ({
+          coordinate: { x: step.x, y: step.y },
+          action: step.action as Action,
+          pickPos: step.pickPos,
+        })),
+      })),
+      conflictsResolved: 0,
+      totalConstraintsAdded: 0,
+    });
+
+    const savedJobsPreview = await this.jobsPreviewRepository.save(jobsPreview);
+    return {
+      ...savedJobsPreview.toJSON(),
+      algoDetails: savedJobsPreview.algoDetails.map((item) => ({
+        ...item,
+        jobs: null,
+      })),
+    };
+  }
+
+  public async startPicking(algo: string) {
+    const jobPreview = await this.jobsPreviewRepository.getActive();
+    const algoDetail = jobPreview.algoDetails.find(
+      (item) => item.algoName === algo,
+    );
+
+    return this.vehicleService.createJobs(
+      algoDetail.jobs.map((job) => ({
+        waveId: '1',
+        vehicleCode: job.vehicleCode,
+        cartons: job.cartons.map((carton) => ({
+          id: carton.id.toString(),
+        })),
+        steps: job.steps.map((step) => ({
+          coordinate: step.coordinate,
+          action: step.action as Action,
+          pickPos: step.pickPos,
+        })),
+      })),
+    );
+  }
+
+  public async uploadOrders(orders: OrderDto[]) {
+    return this.orderRepository.uploadOrders(orders);
   }
 }

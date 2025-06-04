@@ -6,6 +6,7 @@ import { CreateJob } from '../models/create-job.model';
 import { UpdatePickProgressDto } from '../dtos/update-pick-progress.dto';
 import { OrderService } from 'src/order/services/order.service';
 import { JobStatusEnum } from '../constants/job-status.enum';
+import { VehicleDto } from '../dtos/vehicle.dto';
 
 @Injectable()
 export class VehicleService {
@@ -59,6 +60,10 @@ export class VehicleService {
         startPos: { y: startPos.y, x: startPos.x + index },
       })),
     );
+  }
+
+  public async uploadVehicles(vehicles: VehicleDto[]) {
+    return this.vehicleRepository.uploadVehicles(vehicles);
   }
 
   public async createJobs(jobs: CreateJob[]) {

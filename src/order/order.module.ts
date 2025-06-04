@@ -9,6 +9,8 @@ import { OrderService } from './services/order.service';
 import { VehicleModule } from 'src/vehicle/vehicle.module';
 import { InventoryModule } from 'src/inventory/inventory.module';
 import { WarehouseModule } from 'src/warehouse/warehouse.module';
+import { JobsPreview, JobsPreviewSchema } from './schemas/jobs-preview.schema';
+import { JobsPreviewRepository } from './repositories/jobs-preview.repository';
 
 @Module({
   imports: [
@@ -21,13 +23,19 @@ import { WarehouseModule } from 'src/warehouse/warehouse.module';
         name: Wave.name,
         schema: WaveSchema,
       },
+      { name: JobsPreview.name, schema: JobsPreviewSchema },
     ]),
     forwardRef(() => VehicleModule),
     forwardRef(() => InventoryModule),
     forwardRef(() => WarehouseModule),
   ],
   controllers: [OrderController],
-  providers: [OrderRepository, WaveRepository, OrderService],
+  providers: [
+    OrderRepository,
+    WaveRepository,
+    OrderService,
+    JobsPreviewRepository,
+  ],
   exports: [OrderService],
 })
 export class OrderModule {}

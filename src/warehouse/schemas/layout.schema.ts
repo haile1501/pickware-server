@@ -26,6 +26,12 @@ export class Layout {
 
   @Prop({ type: Object, required: true })
   vehicleDropPos: { x: number; y: number };
+
+  @Prop({ type: Number, required: true })
+  vehicleCellMovingTime: number;
+
+  @Prop({ type: Number, required: true })
+  vehiclePickingTime: number;
 }
 
 export const LayoutSchema = SchemaFactory.createForClass(Layout);

@@ -78,4 +78,13 @@ export class OrderRepository {
       { status: OrderStatusEnum.Fulfilled },
     );
   }
+
+  public getOrders() {
+    return this.orderModel.find();
+  }
+
+  public async uploadOrders(orders: OrderDto[]) {
+    await this.orderModel.deleteMany();
+    return await this.orderModel.insertMany(orders);
+  }
 }

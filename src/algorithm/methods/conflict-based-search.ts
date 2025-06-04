@@ -1,6 +1,7 @@
-import { getPickPos } from './get-pick-pos';
-import { Job } from './models/job';
+import { Job } from '../models/job';
 import { PriorityQueue } from './cooperative-a-star';
+import { getPickPos } from './get-pick-pos';
+
 type Pos = { x: number; y: number };
 type Step = Pos & { action: 'move' | 'stop' | 'pick' | 'drop'; t: number } & {
   pickPos?: Pos;
@@ -46,7 +47,7 @@ function isConstrained(
       c.x === pos.x &&
       c.y === pos.y &&
       c.t === t &&
-      c.vehicleCode !== vehicleCode,
+      c.vehicleCode === vehicleCode,
   );
 }
 
@@ -155,7 +156,7 @@ function detectConflict(paths: Record<string, Step[]>): {
   return null;
 }
 
-export function runCBS(grid: string[][], vehicles: Vehicle[]): Vehicle[] {
+export function runCBS(grid: string[][], vehicles: Vehicle[]) {
   const root: CBSNode = {
     paths: {},
     constraints: [],
@@ -185,25 +186,26 @@ export function runCBS(grid: string[][], vehicles: Vehicle[]): Vehicle[] {
         pickPos: carton.coordinate,
       });
 
-      const toDrop = aStar(
-        grid,
-        carton.coordinate,
-        v.drop,
-        steps[steps.length - 1].t,
-        v.code,
-        root.constraints,
-        'move',
-      );
-      if (!toDrop) throw new Error(`No path to drop for ${v.code}`);
-      steps.push(...toDrop);
-      steps.push({
-        ...v.drop,
-        action: 'drop',
-        t: toDrop[toDrop.length - 1].t + 1,
-      });
+      // const toDrop = aStar(
+      //   grid,
+      //   getPickPos(carton),
+      //   v.drop,
+      //   steps[steps.length - 1].t + 1,
+      //   v.code,
+      //   root.constraints,
+      //   'move',
+      // );
+      // if (!toDrop) throw new Error(`No path to drop for ${v.code}`);
+      // steps.push(...toDrop);
+      // steps.push({
+      //   ...v.drop,
+      //   action: 'drop',
+      //   t: toDrop[toDrop.length - 1].t + 1,
+      // });
 
-      current = v.drop;
-      t = steps[steps.length - 1].t;
+      // current = v.drop;
+      current = getPickPos(carton);
+      t = steps[steps.length - 1].t + 1;
     }
 
     const back = aStar(
@@ -222,9 +224,15 @@ export function runCBS(grid: string[][], vehicles: Vehicle[]): Vehicle[] {
   }
 
   const queue: CBSNode[] = [root];
+  const visited = new Set<string>();
   while (queue.length) {
     const node = queue.shift()!;
+    const nodeKey = JSON.stringify(node.constraints);
+    if (visited.has(nodeKey)) continue;
+    visited.add(nodeKey);
+
     const conflict = detectConflict(node.paths);
+
     if (!conflict) {
       return vehicles.map((v) => ({
         ...v,
@@ -243,6 +251,7 @@ export function runCBS(grid: string[][], vehicles: Vehicle[]): Vehicle[] {
       const steps: Step[] = [];
       let t = 0;
       let current = vehicle.start;
+      let failed = false;
 
       for (const carton of vehicle.job.cartons) {
         const toCarton = aStar(
@@ -254,24 +263,44 @@ export function runCBS(grid: string[][], vehicles: Vehicle[]): Vehicle[] {
           newConstraints,
           'move',
         );
-        if (!toCarton) continue;
+        if (!toCarton) {
+          failed = true;
+          break;
+        }
         steps.push(...toCarton);
+        steps.push({
+          ...getPickPos(carton),
+          action: 'pick',
+          t: toCarton[toCarton.length - 1].t + 1,
+          pickPos: carton.coordinate,
+        });
 
-        const toDrop = aStar(
-          grid,
-          carton.coordinate,
-          vehicle.drop,
-          steps[steps.length - 1].t,
-          vehicle.code,
-          newConstraints,
-          'pick',
-        );
-        if (!toDrop) continue;
-        steps.push(...toDrop);
+        // const toDrop = aStar(
+        //   grid,
+        //   getPickPos(carton),
+        //   vehicle.drop,
+        //   steps[steps.length - 1].t + 1,
+        //   vehicle.code,
+        //   newConstraints,
+        //   'move',
+        // );
+        // if (!toDrop) {
+        //   failed = true;
+        //   break;
+        // }
+        // steps.push(...toDrop);
+        // steps.push({
+        //   ...vehicle.drop,
+        //   action: 'drop',
+        //   t: toDrop[toDrop.length - 1].t + 1,
+        // });
 
-        current = vehicle.drop;
-        t = steps[steps.length - 1].t;
+        // current = vehicle.drop;
+        current = getPickPos(carton);
+        t = steps[steps.length - 1].t + 1;
       }
+
+      if (failed) continue;
 
       const back = aStar(
         grid,
@@ -292,3 +321,123 @@ export function runCBS(grid: string[][], vehicles: Vehicle[]): Vehicle[] {
 
   throw new Error('No conflict-free solution found');
 }
+
+// export function runCBSWindowed(
+//   grid: string[][],
+//   vehicles: Vehicle[],
+//   windowSize: number = 20, // You can tune this
+// ): Vehicle[] {
+//   // Clone vehicles to avoid mutating input
+//   const result: Vehicle[] = vehicles.map((v) => ({ ...v, path: [] }));
+//   const activeVehicles = result.map((v) => ({
+//     ...v,
+//     current: v.start,
+//     t: 0,
+//     jobIndex: 0,
+//     cartonIndex: 0,
+//     done: false,
+//   }));
+
+//   while (activeVehicles.some((v) => !v.done)) {
+//     // Prepare CBS root node for this window
+//     const root: CBSNode = {
+//       paths: {},
+//       constraints: [],
+//     };
+
+//     // Plan for each vehicle for this window
+//     for (const v of activeVehicles) {
+//       if (v.done) continue;
+//       const steps: Step[] = [];
+//       let t = v.t;
+//       let current = v.current;
+//       const cartons = v.job.cartons.slice(v.cartonIndex);
+
+//       // Plan for cartons in this window
+//       for (const carton of cartons) {
+//         const toCarton = aStar(
+//           grid,
+//           current,
+//           getPickPos(carton),
+//           t,
+//           v.code,
+//           root.constraints,
+//           'move',
+//         );
+//         if (!toCarton) break;
+//         steps.push(...toCarton);
+//         steps.push({
+//           ...getPickPos(carton),
+//           action: 'pick',
+//           t: toCarton[toCarton.length - 1].t + 1,
+//           pickPos: carton.coordinate,
+//         });
+
+//         const toDrop = aStar(
+//           grid,
+//           getPickPos(carton),
+//           v.drop,
+//           steps[steps.length - 1].t,
+//           v.code,
+//           root.constraints,
+//           'move',
+//         );
+//         if (!toDrop) break;
+//         steps.push(...toDrop);
+//         steps.push({
+//           ...v.drop,
+//           action: 'drop',
+//           t: toDrop[toDrop.length - 1].t + 1,
+//         });
+
+//         current = v.drop;
+//         t = steps[steps.length - 1].t;
+//         if (steps.length >= windowSize) break;
+//       }
+
+//       // If not enough steps, plan to wait at current location
+//       while (steps.length < windowSize) {
+//         steps.push({
+//           ...current,
+//           t: t++,
+//           action: 'stop',
+//         });
+//       }
+
+//       // Only keep steps within window
+//       root.paths[v.code] = steps.slice(0, windowSize);
+//     }
+
+//     // Run CBS for this window
+//     const windowVehicles = activeVehicles.map((v) => ({
+//       ...v,
+//       path: [],
+//     }));
+//     const windowResult = runCBS(grid, windowVehicles);
+
+//     // Update global paths and vehicle states
+//     for (let i = 0; i < activeVehicles.length; i++) {
+//       const v = activeVehicles[i];
+//       if (v.done) continue;
+//       const planned = windowResult.find((wv) => wv.code === v.code)!.path;
+//       // Append planned steps to result
+//       result[i].path.push(...planned);
+
+//       // Update vehicle state for next window
+//       const lastStep = planned[Math.min(windowSize - 1, planned.length - 1)];
+//       v.current = { x: lastStep.x, y: lastStep.y };
+//       v.t = lastStep.t + 1;
+
+//       // Check if all cartons are done (simple check: if at start and all cartons delivered)
+//       if (
+//         v.cartonIndex >= v.job.cartons.length &&
+//         v.current.x === v.start.x &&
+//         v.current.y === v.start.y
+//       ) {
+//         v.done = true;
+//       }
+//     }
+//   }
+
+//   return result;
+// }

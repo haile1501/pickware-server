@@ -1,5 +1,5 @@
+import { Job } from '../models/job';
 import { getPickPos } from './get-pick-pos';
-import { Job } from './models/job';
 
 type Pos = { x: number; y: number };
 type Step = Pos & { action: 'move' | 'stop' | 'pick' | 'drop' } & {
@@ -106,6 +106,9 @@ function aStar(
   action: 'pick' | 'stop' | 'move' | 'drop' = 'move',
   edgeConstraints: EdgeConstraint[] = [],
 ): Node[] | null {
+  if (grid[start.y][start.x] === '8') {
+    console.log(1);
+  }
   const open = new PriorityQueue<Node>();
   open.enqueue(
     { ...start, t: startTime, g: 0, f: heuristic(start, goal), action },
@@ -255,7 +258,7 @@ function buildPathSequence(
     );
 
     time = pickStep.t + 1;
-    current = carton.coordinate;
+    current = getPickPos(carton);
 
     const pathToDrop = aStar(
       grid,
@@ -325,7 +328,7 @@ function buildPathSequence(
 }
 
 // Update planAllPaths to use edge constraints
-export function planAllPaths(grid: string[][], vehicles: Vehicle[]): Vehicle[] {
+export function CA(grid: string[][], vehicles: Vehicle[]) {
   const constraints: Constraint[] = [];
   const edgeConstraints: EdgeConstraint[] = [];
 
@@ -339,5 +342,59 @@ export function planAllPaths(grid: string[][], vehicles: Vehicle[]): Vehicle[] {
     vehicle.path = path;
   }
 
-  return vehicles;
+  return {
+    vehicles,
+    metrics: { ...calculateCooperativeAStarMetrics(vehicles) },
+  };
+}
+
+function calculateCooperativeAStarMetrics(
+  vehicles: {
+    code: string;
+    path: { x: number; y: number; action: string }[];
+  }[],
+) {
+  let estimatedPickingTime = 0;
+  let estimatedVehiclesStoppingTime = 0;
+  let idleSteps = 0;
+  let totalPathLength = 0;
+  const pathLengths: number[] = [];
+
+  for (const vehicle of vehicles) {
+    if (!vehicle.path.length) continue;
+
+    // estimatedPickingTime: max t in all paths
+    if (vehicle.path.length > estimatedPickingTime) {
+      estimatedPickingTime = vehicle.path.length;
+    }
+
+    // idleSteps: total 'stop' actions for all vehicles
+    const vehicleIdleSteps = vehicle.path.filter(
+      (step) => step.action === 'stop',
+    ).length;
+    idleSteps += vehicleIdleSteps;
+
+    // estimatedVehiclesStoppingTime: max idle steps of any vehicle
+    estimatedVehiclesStoppingTime = vehicleIdleSteps;
+
+    // totalPathLength: total 'move' actions for all vehicles
+    const pathLength = vehicle.path.filter(
+      (step) => step.action === 'move',
+    ).length;
+    totalPathLength += pathLength;
+    pathLengths.push(pathLength);
+  }
+
+  const averagePathLength =
+    pathLengths.length > 0
+      ? pathLengths.reduce((a, b) => a + b, 0) / pathLengths.length
+      : 0;
+
+  return {
+    estimatedPickingTime,
+    estimatedVehiclesStoppingTime,
+    idleSteps,
+    totalPathLength,
+    averagePathLength,
+  };
 }

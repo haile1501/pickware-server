@@ -1,5 +1,5 @@
-import { Carton } from './models/carton';
-import { Job } from './models/job';
+import { Carton } from '../models/carton';
+import { Job } from '../models/job';
 
 type Pos = { x: number; y: number };
 

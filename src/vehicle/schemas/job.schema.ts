@@ -22,8 +22,8 @@ export class Step {
   @Prop({ type: Action, required: true })
   action: Action;
 
-  @Prop({ type: String })
-  pickPos: 'left' | 'right';
+  @Prop({ type: Object })
+  pickPos: { x: number; y: number };
 }
 
 @Schema({

@@ -28,6 +28,15 @@ export class Wave {
     default: WaveStatusEnum.Processing,
   })
   status: WaveStatusEnum;
+
+  @Prop({ type: Number, default: 0 })
+  estimatedPickingTime: number;
+
+  @Prop({ type: Number, default: 0 })
+  avgOrderCompletionTime: number;
+
+  @Prop({ type: Number, default: 0 })
+  estimatedVehiclesStoppingTime: number;
 }
 
 export const WaveSchema = SchemaFactory.createForClass(Wave);

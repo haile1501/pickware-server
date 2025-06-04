@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Vehicle, VehicleDoc } from '../schemas/vehicle.schema';
 import { VehicleStatusEnum } from '../constants/vehicle-status.enum';
+import { VehicleDto } from '../dtos/vehicle.dto';
 
 @Injectable()
 export class VehicleRepository {
@@ -37,5 +38,10 @@ export class VehicleRepository {
       { code: vehicleCode },
       { $set: { status: VehicleStatusEnum.Available } },
     );
+  }
+
+  public async uploadVehicles(vehicles: VehicleDto[]) {
+    await this.vehicleModel.deleteMany();
+    return await this.vehicleModel.insertMany(vehicles);
   }
 }
