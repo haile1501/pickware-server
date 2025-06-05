@@ -27,10 +27,10 @@ export class Layout {
   @Prop({ type: Object, required: true })
   vehicleDropPos: { x: number; y: number };
 
-  @Prop({ type: Number, required: true })
+  @Prop({ type: Number, default: 0 })
   vehicleCellMovingTime: number;
 
-  @Prop({ type: Number, required: true })
+  @Prop({ type: Number, default: 0 })
   vehiclePickingTime: number;
 }
 
