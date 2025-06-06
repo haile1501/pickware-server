@@ -23,6 +23,10 @@ export class VehicleService {
     return this.vehicleRepository.list();
   }
 
+  public async clearJobs() {
+    await this.jobRepository.clearJobs();
+  }
+
   public async clearVehicleAndJob() {
     await this.vehicleRepository.clearAll();
     await this.jobRepository.clearAll();
@@ -63,6 +67,8 @@ export class VehicleService {
   }
 
   public async uploadVehicles(vehicles: VehicleDto[]) {
+    await this.jobRepository.clearAll();
+    await this.orderService.clearJobPreview();
     return this.vehicleRepository.uploadVehicles(vehicles);
   }
 

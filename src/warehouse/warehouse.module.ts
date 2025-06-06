@@ -23,7 +23,7 @@ import { OrderModule } from 'src/order/order.module';
       },
     ]),
     forwardRef(() => InventoryModule),
-    VehicleModule,
+    forwardRef(() => VehicleModule),
     OrderModule,
   ],
   controllers: [WarehouseController],

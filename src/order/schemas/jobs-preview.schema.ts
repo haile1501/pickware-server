@@ -89,7 +89,7 @@ export class JobsPreview {
   @Prop({ type: Array, default: [] })
   algoDetails: AlgoDetail[];
 
-  @Prop({ type: Boolean, default: false })
+  @Prop({ type: Boolean, default: true })
   active: boolean;
 }
 

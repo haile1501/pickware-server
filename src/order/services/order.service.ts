@@ -2,13 +2,12 @@ import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { OrderRepository } from '../repositories/order.repository';
 import { WaveRepository } from '../repositories/wave.repository';
 import { VehicleService } from 'src/vehicle/services/vehicle.service';
-import { OrderDto, SetupOrdersDto } from '../dtos/setup-orders.dto';
+import { OrderDto } from '../dtos/setup-orders.dto';
 import { Order } from '../schemas/order.schema';
 import { InventoryService } from 'src/inventory/services/inventory.service';
 import { CartonDoc } from 'src/inventory/schemas/carton.schema';
 import { WarehouseService } from 'src/warehouse/services/warehouse.service';
 // import { Action } from 'src/vehicle/constants/action.enum';
-import { generateJob } from 'src/algorithm/methods';
 import { generatePreviewPlan } from 'src/algorithm/methods/generate-preview';
 import { JobsPreview } from '../schemas/jobs-preview.schema';
 import { Action } from 'src/vehicle/constants/action.enum';
@@ -48,60 +47,6 @@ export class OrderService {
     await this.waveRepository.clearAll();
   }
 
-  public async generateWave(endTime: Date, algorithm: string) {
-    const orders =
-      await this.orderRepository.getPendingOrdersBeforeEndTime(endTime);
-
-    const newWave = await this.waveRepository.createWave(orders.length);
-    const waveId = newWave._id.toString();
-    await Promise.all(
-      orders.map((order) => {
-        order.waveId = waveId;
-        // order.status = OrderStatusEnum.Processing;
-        return order.save();
-      }),
-    );
-
-    const layout = await this.warehouseService.getLayout();
-
-    const vehicles = await this.vehicleService.list();
-    const cartonsToPick = await this.calculateCartonsToPick(orders);
-
-    const jobs = generateJob(
-      cartonsToPick.map((item) => ({
-        id: item.toJSON().id,
-        coordinate: item.toJSON().coordinate,
-        shelfOrder: item.toJSON().shelfOrder,
-      })),
-      vehicles.map((item) => ({
-        code: item.toJSON().code,
-        startPos: item.toJSON().startPos,
-      })),
-      layout.toJSON().vehicleDropPos,
-      layout.toJSON().matrix,
-      algorithm,
-    );
-
-    return this.vehicleService.createJobs(
-      jobs.map((job) => ({
-        waveId: waveId,
-        vehicleCode: job.code,
-        cartons: job.job.cartons.map((carton) => ({
-          id: carton.id.toString(),
-        })),
-        steps: job.path.map((step) => ({
-          coordinate: { x: step.x, y: step.y },
-          action: step.action as Action,
-          pickPos: step.pickPos,
-        })),
-      })),
-    );
-  }
-
-  public async setupOrders(data: SetupOrdersDto) {
-    return this.orderRepository.setupOrders(data);
-  }
-
   private async calculateCartonsToPick(orders: Order[]): Promise<CartonDoc[]> {
     const skuSet = new Set<string>();
     for (const order of orders) {
@@ -134,11 +79,18 @@ export class OrderService {
     await this.waveRepository.finishWave(waveId);
   }
 
-  public createOrder(order: OrderDto) {
-    return this.orderRepository.createOrder(order);
-  }
-
   public async previewPickingPlan() {
+    const activePreviewPlan = await this.jobsPreviewRepository.getActive();
+    if (activePreviewPlan) {
+      return {
+        ...activePreviewPlan.toJSON(),
+        algoDetails: activePreviewPlan.algoDetails.map((item) => ({
+          ...item,
+          jobs: null,
+        })),
+      };
+    }
+
     const orders = await this.orderRepository.getOrders();
 
     const layout = await this.warehouseService.getLayout();
@@ -248,6 +200,17 @@ export class OrderService {
   }
 
   public async uploadOrders(orders: OrderDto[]) {
+    await this.orderRepository.clearAll();
+    await this.jobsPreviewRepository.clearAll();
+    await this.vehicleService.clearJobs();
     return this.orderRepository.uploadOrders(orders);
+  }
+
+  public async clearOrders() {
+    return await this.orderRepository.clearAll();
+  }
+
+  public async clearJobPreview() {
+    return await this.jobsPreviewRepository.clearAll();
   }
 }

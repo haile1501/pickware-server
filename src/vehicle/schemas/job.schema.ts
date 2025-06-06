@@ -59,6 +59,9 @@ export class Job {
 
   @Prop({ type: Array, default: [] })
   steps: Step[];
+
+  @Prop({ type: Boolean, default: true })
+  isActive?: boolean;
 }
 
 export const JobSchema = SchemaFactory.createForClass(Job);

@@ -16,21 +16,16 @@ export class JobRepository {
     return this.jobModel.deleteMany();
   }
 
-  public getProcessingJobByVehicleId(vehicleId: string) {
-    return this.jobModel.findOne({
-      vehicleId,
-      status: JobStatusEnum.Processing,
-    });
-  }
-
   public getProcessingJobByVehicleCodes(vehicleCodes: string[]) {
     return this.jobModel.find({
       vehicleCode: { $in: vehicleCodes },
       status: JobStatusEnum.Processing,
+      isActive: true,
     });
   }
 
-  public createJobs(jobs: CreateJob[]) {
+  public async createJobs(jobs: CreateJob[]) {
+    await this.jobModel.updateMany({}, { isActive: false });
     return this.jobModel.insertMany(jobs);
   }
 
@@ -38,6 +33,7 @@ export class JobRepository {
     return this.jobModel.findOne({
       vehicleCode,
       status: JobStatusEnum.Processing,
+      isActive: true,
     });
   }
 
@@ -56,5 +52,9 @@ export class JobRepository {
 
   public async getAllJobsByWaveId(waveId: string) {
     return await this.jobModel.find({ waveId });
+  }
+
+  public async clearJobs() {
+    return await this.jobModel.deleteMany();
   }
 }

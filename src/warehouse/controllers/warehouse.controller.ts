@@ -60,6 +60,7 @@ export class WarehouseController {
       throw new Error('Missing startPos or dropPos in the uploaded layout');
     }
 
+    await this.warehouseService.deleteWarehouse();
     await this.warehouseService.saveLayout(matrix, startPos, dropPos);
 
     return {

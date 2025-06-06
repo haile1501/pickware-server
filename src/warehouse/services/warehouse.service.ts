@@ -23,6 +23,7 @@ export class WarehouseService {
     @Inject(forwardRef(() => InventoryService))
     private readonly inventoryService: InventoryService,
     private readonly orderService: OrderService,
+    @Inject(forwardRef(() => VehicleService))
     private readonly vehicleService: VehicleService,
   ) {}
 
@@ -60,7 +61,8 @@ export class WarehouseService {
     return this.blockRepository.setUpBlocks(setUpBlocksDto);
   }
 
-  public importProducts(products: CreateProductModel[]) {
+  public async importProducts(products: CreateProductModel[]) {
+    await this.inventoryService.clearInventory();
     return this.inventoryService.importProduct(products);
   }
 
@@ -118,7 +120,7 @@ export class WarehouseService {
       this.orderService.clearOrderAndWave(),
       this.layoutRepository.clear(),
       this.blockRepository.clearBlock(),
-      // this.vehicleService.clearVehicleAndJob(),
+      this.vehicleService.clearVehicleAndJob(),
     ]);
   }
 }

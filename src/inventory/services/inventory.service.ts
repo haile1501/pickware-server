@@ -1,18 +1,21 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { ProductRepository } from '../repositories/product.repository';
 import { CartonRepository } from '../repositories/carton.repository';
-import { WarehouseService } from 'src/warehouse/services/warehouse.service';
 // import { Block } from 'src/warehouse/schemas/block.schema';
 import { CreateProductModel } from '../models/create-product.model';
 import { CreateCartonModel } from '../models/create-carton.model';
+import { VehicleService } from 'src/vehicle/services/vehicle.service';
+import { OrderService } from 'src/order/services/order.service';
 
 @Injectable()
 export class InventoryService {
   constructor(
     private readonly productRepository: ProductRepository,
     private readonly cartonRepository: CartonRepository,
-    @Inject(forwardRef(() => WarehouseService))
-    private readonly warehouseService: WarehouseService,
+    @Inject(forwardRef(() => VehicleService))
+    private readonly vehicleService: VehicleService,
+    @Inject(forwardRef(() => OrderService))
+    private readonly orderService: OrderService,
   ) {}
 
   public async getPaginatedProducts(page: number, size: number) {
@@ -31,8 +34,11 @@ export class InventoryService {
   }
 
   public async clearInventory() {
+    await this.orderService.clearOrders();
+    await this.orderService.clearJobPreview();
     await this.cartonRepository.clearAll();
     await this.productRepository.clearAll();
+    await this.vehicleService.clearJobs();
   }
 
   public async getAllCartons() {

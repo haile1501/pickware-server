@@ -6,7 +6,8 @@ import { InventoryController } from './controllers/inventory.controller';
 import { ProductRepository } from './repositories/product.repository';
 import { CartonRepository } from './repositories/carton.repository';
 import { InventoryService } from './services/inventory.service';
-import { WarehouseModule } from 'src/warehouse/warehouse.module';
+import { VehicleModule } from 'src/vehicle/vehicle.module';
+import { OrderModule } from 'src/order/order.module';
 
 @Module({
   imports: [
@@ -20,7 +21,8 @@ import { WarehouseModule } from 'src/warehouse/warehouse.module';
         schema: CartonSchema,
       },
     ]),
-    forwardRef(() => WarehouseModule),
+    forwardRef(() => VehicleModule),
+    forwardRef(() => OrderModule),
   ],
   controllers: [InventoryController],
   providers: [ProductRepository, CartonRepository, InventoryService],

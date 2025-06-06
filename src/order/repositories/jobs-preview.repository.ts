@@ -10,11 +10,16 @@ export class JobsPreviewRepository {
     private readonly jobsPreviewModel: Model<JobsPreviewDoc>,
   ) {}
 
-  public save(jobsPreview: JobsPreview) {
+  public async save(jobsPreview: JobsPreview) {
+    await this.jobsPreviewModel.updateMany({}, { active: false });
     return this.jobsPreviewModel.create(jobsPreview);
   }
 
   public getActive() {
     return this.jobsPreviewModel.findOne({ active: true });
+  }
+
+  public clearAll() {
+    return this.jobsPreviewModel.deleteMany();
   }
 }

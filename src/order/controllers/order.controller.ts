@@ -10,8 +10,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { OrderService } from '../services/order.service';
-import { GenerateWaveDto } from '../dtos/generate-wave-dto';
-import { OrderDto, SetupOrdersDto } from '../dtos/setup-orders.dto';
+import { OrderDto } from '../dtos/setup-orders.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('order')
@@ -24,22 +23,6 @@ export class OrderController {
     @Query('size', new DefaultValuePipe(10), ParseIntPipe) size: number,
   ) {
     return this.orderService.getPaginatedOrders(page, size);
-  }
-
-  @Post('generate-wave')
-  public async generateWave(@Body() dto: GenerateWaveDto) {
-    const { endTime, algorithm } = dto;
-    return this.orderService.generateWave(new Date(endTime), algorithm);
-  }
-
-  @Post('setup-orders')
-  public async setupOrders(@Body() dto: SetupOrdersDto) {
-    return this.orderService.setupOrders(dto);
-  }
-
-  @Post('create-order')
-  public async createOrder(@Body() dto: OrderDto) {
-    return this.orderService.createOrder(dto);
   }
 
   @Get('preview-plan')
