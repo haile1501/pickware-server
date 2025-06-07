@@ -32,6 +32,7 @@ export const generatePreviewPlan = (
     drop: dropPos,
     job,
     path: [],
+    conflicts: [],
   }));
 
   const noConflictAvoidanceResult = generateNoConflictAvoidancePlan(

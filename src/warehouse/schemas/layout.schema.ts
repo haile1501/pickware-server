@@ -25,6 +25,12 @@ export class Layout {
   vehicleStartPos: { x: number; y: number };
 
   @Prop({ type: Object, required: true })
+  vehicleAreaWidth: number;
+
+  @Prop({ type: Object, required: true })
+  vehicleAreaHeight: number;
+
+  @Prop({ type: Object, required: true })
   vehicleDropPos: { x: number; y: number };
 
   @Prop({ type: Number, default: 0 })

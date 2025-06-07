@@ -26,6 +26,24 @@ export class Step {
   pickPos: { x: number; y: number };
 }
 
+@Schema({ _id: false })
+export class Conflict {
+  @Prop({ type: Object, required: true })
+  coordinate: { x: number; y: number };
+
+  @Prop({ type: String, required: true })
+  resolution: 'detour' | 'wait';
+
+  @Prop({ type: Number, required: true })
+  t: number;
+
+  @Prop({ type: String, required: true })
+  conflictType: 'vertex' | 'edge';
+
+  @Prop({ type: String, required: true })
+  vehicleCode: string;
+}
+
 @Schema({
   collection: 'job',
   timestamps: {
@@ -62,6 +80,9 @@ export class Job {
 
   @Prop({ type: Boolean, default: true })
   isActive?: boolean;
+
+  @Prop({ type: [Array], default: [] })
+  conflicts: Conflict[][];
 }
 
 export const JobSchema = SchemaFactory.createForClass(Job);

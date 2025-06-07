@@ -53,8 +53,16 @@ export class WarehouseService {
     matrix: string[][],
     startPos: XyCoordinate,
     dropPos: XyCoordinate,
+    vehicleAreaWidth: number,
+    vehicleAreaHeight: number,
   ) {
-    return this.layoutRepository.save(matrix, startPos, dropPos);
+    return this.layoutRepository.save(
+      matrix,
+      startPos,
+      dropPos,
+      vehicleAreaWidth,
+      vehicleAreaHeight,
+    );
   }
 
   public setupBlocks(setUpBlocksDto: SetupBlocksDto) {

@@ -11,7 +11,6 @@ import { VehicleService } from '../services/vehicle.service';
 import { SetupVehiclesDto } from '../dtos/setup-vehicles.dto';
 import { UpdatePickProgressDto } from '../dtos/update-pick-progress.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { VehicleDto } from '../dtos/vehicle.dto';
 
 @Controller('vehicle')
 export class VehicleController {
@@ -30,7 +29,7 @@ export class VehicleController {
   @Post('upload-vehicles')
   @UseInterceptors(FileInterceptor('file'))
   public async uploadVehicles(@UploadedFile() file: Express.Multer.File) {
-    const vehicles: VehicleDto[] = JSON.parse(file.buffer.toString());
+    const vehicles = JSON.parse(file.buffer.toString());
     return this.vehicleService.uploadVehicles(vehicles);
   }
 

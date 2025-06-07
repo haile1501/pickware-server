@@ -6,7 +6,6 @@ import { CreateJob } from '../models/create-job.model';
 import { UpdatePickProgressDto } from '../dtos/update-pick-progress.dto';
 import { OrderService } from 'src/order/services/order.service';
 import { JobStatusEnum } from '../constants/job-status.enum';
-import { VehicleDto } from '../dtos/vehicle.dto';
 
 @Injectable()
 export class VehicleService {
@@ -66,10 +65,30 @@ export class VehicleService {
     );
   }
 
-  public async uploadVehicles(vehicles: VehicleDto[]) {
+  public async uploadVehicles(vehicles: { vehicleCode: string }[]) {
     await this.jobRepository.clearAll();
     await this.orderService.clearJobPreview();
-    return this.vehicleRepository.uploadVehicles(vehicles);
+
+    const layout = await this.warehouseService.getLayout();
+    const { vehicleStartPos, vehicleAreaWidth, vehicleAreaHeight } = layout;
+
+    // Generate start positions to fit the area (row by row, left to right)
+    const positions = vehicles.map((vehicle, index) => {
+      const row = Math.floor(index / vehicleAreaWidth);
+      const col = index % vehicleAreaWidth;
+      if (row >= vehicleAreaHeight) {
+        throw new Error('Too many vehicles for the defined area');
+      }
+      return {
+        code: vehicle.vehicleCode,
+        startPos: {
+          y: vehicleStartPos.y + row,
+          x: vehicleStartPos.x + col,
+        },
+      };
+    });
+
+    return this.vehicleRepository.uploadVehicles(positions);
   }
 
   public async createJobs(jobs: CreateJob[]) {

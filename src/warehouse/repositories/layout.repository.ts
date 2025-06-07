@@ -19,11 +19,15 @@ export class LayoutRepository {
     matrix: string[][],
     vehicleStartPos: XyCoordinate,
     vehicleDropPos: XyCoordinate,
+    vehicleAreaWidth: number,
+    vehicleAreaHeight: number,
   ) {
     return this.layoutModel.insertOne({
       matrix,
       vehicleStartPos,
       vehicleDropPos,
+      vehicleAreaWidth,
+      vehicleAreaHeight,
     });
   }
 

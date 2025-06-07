@@ -1,14 +1,16 @@
+import { Conflict } from 'src/vehicle/schemas/job.schema';
 import { Job } from '../models/job';
 import { getPickPos } from './get-pick-pos';
 
 type Pos = { x: number; y: number };
 type Step = Pos & { action: 'move' | 'stop' | 'pick' | 'drop' } & {
   pickPos?: Pos;
+  conflict?: Conflict;
 };
-type Constraint = { x: number; y: number; t: number };
+type Constraint = { x: number; y: number; t: number; vehicleCode: string };
 
 // Add a new type for edge constraints
-type EdgeConstraint = { from: Pos; to: Pos; t: number };
+type EdgeConstraint = { from: Pos; to: Pos; t: number; vehicleCode: string };
 
 export type Vehicle = {
   code: string;
@@ -16,6 +18,7 @@ export type Vehicle = {
   drop: Pos;
   job: Job;
   path: Step[];
+  conflicts: Conflict[][];
 };
 
 type Node = Pos & {
@@ -105,10 +108,10 @@ function aStar(
   startTime: number,
   action: 'pick' | 'stop' | 'move' | 'drop' = 'move',
   edgeConstraints: EdgeConstraint[] = [],
-): Node[] | null {
-  if (grid[start.y][start.x] === '8') {
-    console.log(1);
-  }
+): {
+  path: Node[];
+  conflicts: Conflict[];
+} | null {
   const open = new PriorityQueue<Node>();
   open.enqueue(
     { ...start, t: startTime, g: 0, f: heuristic(start, goal), action },
@@ -118,18 +121,19 @@ function aStar(
   const bestG = new Map<string, number>();
 
   // Constraint table for fast lookup
-  const constraintTable = new Map<string, Set<number>>();
-  constraints.forEach(({ x, y, t }) => {
+  type ConstraintEntry = { t: number; vehicleCode: string };
+  const constraintTable = new Map<string, Set<ConstraintEntry>>();
+  constraints.forEach(({ x, y, t, vehicleCode }) => {
     const key = `${x},${y}`;
     if (!constraintTable.has(key)) constraintTable.set(key, new Set());
-    constraintTable.get(key)!.add(t);
+    constraintTable.get(key)!.add({ t, vehicleCode });
   });
 
   // Edge constraint table for fast lookup
-  const edgeConstraintTable = new Map<string, Set<string>>();
-  edgeConstraints.forEach(({ from, to, t }) => {
+  const edgeConstraintTable = new Map<string, string>();
+  edgeConstraints.forEach(({ from, to, t, vehicleCode }) => {
     const key = `${from.x},${from.y},${to.x},${to.y},${t}`;
-    edgeConstraintTable.set(key, new Set(['blocked']));
+    edgeConstraintTable.set(key, vehicleCode);
   });
 
   while (open.length) {
@@ -141,12 +145,89 @@ function aStar(
 
     if (current.x === goal.x && current.y === goal.y) {
       const path: Node[] = [];
+      const conflicts: Conflict[] = [];
       let temp: Node | undefined = current;
       while (temp) {
         path.unshift(temp);
-        temp = temp.parent;
+        const parent = temp.parent;
+
+        if (parent) {
+          const { x, y, t } = parent;
+          for (const [dx, dy] of DIRS) {
+            const nx = x + dx;
+            const ny = y + dy;
+            const nt = t + 1;
+
+            if (nx === temp.x && ny === temp.y) {
+              continue;
+            }
+
+            let conflictType: 'vertex' | 'edge' = 'vertex';
+            let resolution: 'detour' | 'wait' = 'detour';
+            let conflictWithVehicleCode = null;
+
+            if (temp.x === x && temp.y === y) {
+              resolution = 'wait';
+            } else {
+              resolution = 'detour';
+            }
+
+            // Vertex constraint
+            if (
+              nx < 0 ||
+              ny < 0 ||
+              nx >= grid[0].length ||
+              ny >= grid.length ||
+              grid[ny][nx] === '8'
+            )
+              continue;
+
+            // Cell constraint
+            const cellConstraints = constraintTable.get(`${nx},${ny}`);
+            if (
+              cellConstraints &&
+              Array.from(cellConstraints).some((entry) => {
+                if (entry.t === nt) {
+                  conflictWithVehicleCode = entry.vehicleCode;
+                  return true;
+                }
+                return false;
+              })
+            ) {
+              conflictType = 'vertex';
+            }
+
+            // Edge conflict check
+            const edgeKey = `${current.x},${current.y},${nx},${ny},${nt}`;
+            if (edgeConstraintTable.has(edgeKey)) {
+              conflictType = 'edge';
+              conflictWithVehicleCode = edgeConstraintTable.get(edgeKey);
+            }
+
+            if (conflictWithVehicleCode) {
+              if (
+                heuristic({ x: nx, y: ny }, goal) <
+                heuristic({ x: temp.x, y: temp.y }, goal)
+              ) {
+                conflicts.push({
+                  coordinate: {
+                    x: nx,
+                    y: ny,
+                  },
+                  resolution: resolution,
+                  t: nt,
+                  conflictType: conflictType,
+                  vehicleCode: conflictWithVehicleCode,
+                });
+              }
+            }
+          }
+        }
+
+        temp = parent;
       }
-      return path;
+
+      return { path, conflicts };
     }
 
     for (const [dx, dy] of DIRS) {
@@ -160,14 +241,24 @@ function aStar(
         ny < 0 ||
         nx >= grid[0].length ||
         ny >= grid.length ||
-        grid[ny][nx] === '8' ||
-        constraintTable.get(`${nx},${ny}`)?.has(nt)
+        grid[ny][nx] === '8'
       )
         continue;
 
+      // Cell constraint
+      const cellConstraints = constraintTable.get(`${nx},${ny}`);
+      if (
+        cellConstraints &&
+        Array.from(cellConstraints).some((entry) => entry.t === nt)
+      ) {
+        continue;
+      }
+
       // Edge conflict check
       const edgeKey = `${current.x},${current.y},${nx},${ny},${nt}`;
-      if (edgeConstraintTable.has(edgeKey)) continue;
+      if (edgeConstraintTable.has(edgeKey)) {
+        continue;
+      }
 
       const nodeKey = `${nx},${ny},${nt}`;
       const newG = current.g + 1;
@@ -196,17 +287,20 @@ function buildPathSequence(
   vehicle: Vehicle,
   constraints: Constraint[],
   edgeConstraints: EdgeConstraint[],
+  startTime = 0, // thêm tham số này
 ): {
   path: Step[];
   constraints: Constraint[];
   edgeConstraints: EdgeConstraint[];
+  possibleConflicts: Conflict[][];
 } {
-  let time = 0;
+  let time = startTime; // bắt đầu từ sau khi chờ
   const sequence: Step[] = [];
+  const possibleConflicts: Conflict[][] = [];
   let current = vehicle.start;
 
   for (const carton of vehicle.job.cartons) {
-    const pathToCarton = aStar(
+    const { path: pathToCarton, conflicts: pathToCartonConflicts } = aStar(
       grid,
       current,
       getPickPos(carton),
@@ -227,23 +321,30 @@ function buildPathSequence(
     };
     pathToCarton.push(pickStep);
 
-    // Add vertex and edge constraints
+    // Add vertex and edge constraints with vehicleCode
     pathToCarton.forEach((n, i, arr) => {
-      constraints.push({ x: n.x, y: n.y, t: n.t });
+      constraints.push({ x: n.x, y: n.y, t: n.t, vehicleCode: vehicle.code });
       if (n.action === 'pick') {
-        constraints.push({ x: n.x, y: n.y, t: n.t + 1 });
+        constraints.push({
+          x: n.x,
+          y: n.y,
+          t: n.t + 1,
+          vehicleCode: vehicle.code,
+        });
       }
       if (i > 0) {
         edgeConstraints.push({
           from: { x: arr[i - 1].x, y: arr[i - 1].y },
           to: { x: n.x, y: n.y },
           t: n.t,
+          vehicleCode: vehicle.code,
         });
         if (n.action === 'pick') {
           edgeConstraints.push({
             from: { x: arr[i - 1].x, y: arr[i - 1].y },
             to: { x: n.x, y: n.y },
             t: n.t + 1,
+            vehicleCode: vehicle.code,
           });
         }
       }
@@ -256,11 +357,12 @@ function buildPathSequence(
         pickPos: n.pickPos,
       })),
     );
+    possibleConflicts.push(pathToCartonConflicts);
 
     time = pickStep.t + 1;
     current = getPickPos(carton);
 
-    const pathToDrop = aStar(
+    const { path: pathToDrop, conflicts: pathToDropConflicts } = aStar(
       grid,
       current,
       vehicle.drop,
@@ -281,25 +383,27 @@ function buildPathSequence(
     pathToDrop.push(dropStep);
 
     pathToDrop.forEach((n, i, arr) => {
-      constraints.push({ x: n.x, y: n.y, t: n.t });
+      constraints.push({ x: n.x, y: n.y, t: n.t, vehicleCode: vehicle.code });
       if (i > 0) {
         edgeConstraints.push({
           from: { x: arr[i - 1].x, y: arr[i - 1].y },
           to: { x: n.x, y: n.y },
           t: n.t,
+          vehicleCode: vehicle.code,
         });
       }
     });
     sequence.push(
       ...pathToDrop.map((n) => ({ x: n.x, y: n.y, action: n.action })),
     );
+    possibleConflicts.push(pathToDropConflicts);
 
     time = dropStep.t;
     current = vehicle.drop;
   }
 
   // Optional: return to start
-  const pathToStart = aStar(
+  const { path: pathToStart, conflicts: pathToStartConflicts } = aStar(
     grid,
     current,
     vehicle.start,
@@ -310,21 +414,23 @@ function buildPathSequence(
   );
   if (pathToStart) {
     pathToStart.forEach((n, i, arr) => {
-      constraints.push({ x: n.x, y: n.y, t: n.t });
+      constraints.push({ x: n.x, y: n.y, t: n.t, vehicleCode: vehicle.code });
       if (i > 0) {
         edgeConstraints.push({
           from: { x: arr[i - 1].x, y: arr[i - 1].y },
           to: { x: n.x, y: n.y },
           t: n.t,
+          vehicleCode: vehicle.code,
         });
       }
     });
     sequence.push(
       ...pathToStart.map((n) => ({ x: n.x, y: n.y, action: n.action })),
     );
+    possibleConflicts.push(pathToStartConflicts);
   }
 
-  return { path: sequence, constraints, edgeConstraints };
+  return { path: sequence, constraints, edgeConstraints, possibleConflicts };
 }
 
 // Update planAllPaths to use edge constraints
@@ -333,13 +439,24 @@ export function CA(grid: string[][], vehicles: Vehicle[]) {
   const edgeConstraints: EdgeConstraint[] = [];
 
   for (const vehicle of vehicles) {
-    const { path } = buildPathSequence(
+    const vIdx = vehicles.findIndex((v) => v.code === vehicle.code);
+    const waitSteps: Step[] = [];
+    for (let w = 0; w < vIdx; w++) {
+      waitSteps.push({
+        x: vehicle.start.x,
+        y: vehicle.start.y,
+        action: 'stop',
+      });
+    }
+    const { path, possibleConflicts } = buildPathSequence(
       grid,
       vehicle,
       constraints,
       edgeConstraints,
+      waitSteps.length,
     );
-    vehicle.path = path;
+    vehicle.path = [...waitSteps, ...path];
+    vehicle.conflicts = possibleConflicts;
   }
 
   return {

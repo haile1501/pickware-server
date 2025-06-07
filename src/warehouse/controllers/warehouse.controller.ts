@@ -31,6 +31,8 @@ export class WarehouseController {
 
     let startPos: { x: number; y: number } | null = null;
     let dropPos: { x: number; y: number } | null = null;
+    let vehicleAreaWidth = 0;
+    let vehicleAreaHeight = 0;
     const matrix: string[][] = [];
 
     for (const line of lines) {
@@ -50,6 +52,14 @@ export class WarehouseController {
           .split('-')
           .map(Number);
         dropPos = { x, y };
+      } else if (trimmedLine.startsWith('vehicleAreaWidth:')) {
+        vehicleAreaWidth = Number(
+          trimmedLine.replace('vehicleAreaWidth:', '').trim(),
+        );
+      } else if (trimmedLine.startsWith('vehicleAreaHeight:')) {
+        vehicleAreaHeight = Number(
+          trimmedLine.replace('vehicleAreaHeight:', '').trim(),
+        );
       } else if (trimmedLine.length > 0 && /^[0-9xXyY\s]+$/.test(trimmedLine)) {
         const row = trimmedLine.split(/\s+/);
         matrix.push(row);
@@ -61,13 +71,21 @@ export class WarehouseController {
     }
 
     await this.warehouseService.deleteWarehouse();
-    await this.warehouseService.saveLayout(matrix, startPos, dropPos);
+    await this.warehouseService.saveLayout(
+      matrix,
+      startPos,
+      dropPos,
+      vehicleAreaWidth,
+      vehicleAreaHeight,
+    );
 
     return {
       message: 'Layout uploaded successfully',
       matrix,
       startPos,
       dropPos,
+      vehicleAreaWidth,
+      vehicleAreaHeight,
     };
   }
 

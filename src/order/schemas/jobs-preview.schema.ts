@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import { Carton } from '../../algorithm/models/carton';
-import { Step } from 'src/vehicle/schemas/job.schema';
+import { Conflict, Step } from 'src/vehicle/schemas/job.schema';
 
 export type JobsPreviewDoc = JobsPreview & Document;
 
@@ -17,6 +17,9 @@ export class Job {
 
   @Prop({ type: Array, default: [] })
   steps: Step[];
+
+  @Prop({ type: [Array], default: [] })
+  conflicts: Conflict[][];
 }
 
 @Schema({
